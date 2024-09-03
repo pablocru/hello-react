@@ -21,7 +21,10 @@ jobs:
 
     # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
     permissions:
-      contents: read packages: write attestations: write id-token: write
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
 
     steps:
       - name: Checkout repository
@@ -31,9 +34,11 @@ jobs:
       # using the account and password that will publish the packages. Once published, the
       # packages are scoped to the account defined here.
       - name: Log in to the Container registry
-        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1 with:
-          registry: ${{ env.REGISTRY }} username: ${{ github.actor }} password: ${{
-          secrets.GITHUB_TOKEN }}
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{secrets.GITHUB_TOKEN }}
 
       # This step uses
       # [docker/metadata-action](https://github.com/docker/metadata-action#about) to
@@ -41,7 +46,8 @@ jobs:
       # "meta" allows the output of this step to be referenced in a subsequent step. The
       # `images` value provides the base name for the tags and labels.
       - name: Extract metadata (tags, labels) for Docker
-        id: meta uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
@@ -53,16 +59,21 @@ jobs:
       # `docker/build-push-action` repository. It uses the `tags` and `labels` parameters
       # to tag and label the image with the output from the "meta" step.
       - name: Build and push Docker image
-        id: push uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        id: push
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
         with:
-          context: . push: true tags: ${{ steps.meta.outputs.tags }} labels: ${{
-          steps.meta.outputs.labels }}
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{steps.meta.outputs.labels }}
 
       # This step generates an artifact attestation for the image, which is an unforgeable
       # statement about where and how it was built. It increases supply chain security for
       # people who consume the image. For more information, see
       # "https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations/using-artifact-attestations-to-establish-provenance-for-builds"
       - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v1 with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}} subject-digest: ${{
-          steps.push.outputs.digest }} push-to-registry: true
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+          subject-digest: ${{steps.push.outputs.digest }}
+          push-to-registry: true
